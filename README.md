@@ -45,9 +45,14 @@ Python 3.11 이상이 필요합니다.
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install -e ".[dev]"
+python -m pip install ".[dev]"
 arch-bot
 ```
+
+일반 설치 방식을 사용하므로 소스 코드를 변경한 뒤에는
+`python -m pip install ".[dev]"`를 다시 실행합니다. macOS의 Python 3.14에서는
+editable 설치(`-e`)의 경로 파일이 숨김 처리되어 패키지를 찾지 못하는 경우가
+있어 권장하지 않습니다.
 
 또는 Docker를 사용합니다.
 
