@@ -6,6 +6,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 COPY pyproject.toml README.md ./
 COPY src ./src
+COPY config ./config
 RUN pip install --no-cache-dir .
 
 CMD ["arch-bot"]

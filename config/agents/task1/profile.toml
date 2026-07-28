@@ -1,0 +1,9 @@
+id = "task1"
+display_name = "건축봇 Task 1"
+channel_id_env = "DISCORD_TASK1_CHANNEL_ID"
+system_prompt_file = "system.md"
+
+[capabilities]
+skills = ["architecture-safety"]
+tools = []
+mcp_servers = []

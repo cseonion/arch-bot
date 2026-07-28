@@ -7,7 +7,7 @@ from openai import AsyncOpenAI
 
 from arch_bot.config import Settings
 
-SYSTEM_PROMPT = """
+DEFAULT_SYSTEM_PROMPT = """
 You are an architecture-work assistant communicating through Discord.
 Answer in the user's language. Lead with the result and keep routine answers practical.
 State assumptions when requirements are ambiguous. Never claim that an external action,
@@ -21,11 +21,21 @@ professional and current project documents.
 class ArchitectureAgent:
     """Small stateful wrapper around the OpenAI Responses API."""
 
-    def __init__(self, settings: Settings) -> None:
+    def __init__(
+        self,
+        settings: Settings,
+        *,
+        agent_id: str = "default",
+        display_name: str = "건축봇",
+        system_prompt: str = DEFAULT_SYSTEM_PROMPT,
+    ) -> None:
         self._client = AsyncOpenAI(api_key=settings.openai_api_key)
         self._model = settings.openai_model
         self._reasoning_effort = settings.reasoning_effort
         self._max_output_tokens = settings.max_output_tokens
+        self._agent_id = agent_id
+        self._display_name = display_name
+        self._system_prompt = system_prompt
         self._previous_response_ids: dict[str, str] = {}
         self._locks: defaultdict[str, asyncio.Lock] = defaultdict(asyncio.Lock)
 
@@ -33,7 +43,7 @@ class ArchitectureAgent:
         async with self._locks[conversation_id]:
             request: dict[str, object] = {
                 "model": self._model,
-                "instructions": SYSTEM_PROMPT,
+                "instructions": self._system_prompt,
                 "input": prompt,
                 "reasoning": {"effort": self._reasoning_effort},
                 "max_output_tokens": self._max_output_tokens,
@@ -53,3 +63,11 @@ class ArchitectureAgent:
     @property
     def model(self) -> str:
         return self._model
+
+    @property
+    def agent_id(self) -> str:
+        return self._agent_id
+
+    @property
+    def display_name(self) -> str:
+        return self._display_name

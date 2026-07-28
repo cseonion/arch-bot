@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
+from pathlib import Path
 
 
 class ConfigError(ValueError):
@@ -16,6 +17,7 @@ class Settings:
     openai_model: str
     reasoning_effort: str
     max_output_tokens: int
+    agent_config_dir: Path
 
     @classmethod
     def from_env(cls) -> Settings:
@@ -53,4 +55,7 @@ class Settings:
             openai_model=os.getenv("OPENAI_MODEL", "gpt-5.6-terra").strip(),
             reasoning_effort=effort,
             max_output_tokens=max_tokens,
+            agent_config_dir=Path(
+                os.getenv("ARCH_BOT_AGENT_CONFIG_DIR", "config/agents").strip()
+            ),
         )

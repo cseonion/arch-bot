@@ -1,0 +1,9 @@
+id = "default"
+display_name = "건축봇"
+default = true
+system_prompt_file = "system.md"
+
+[capabilities]
+skills = ["architecture-safety"]
+tools = []
+mcp_servers = []

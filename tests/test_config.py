@@ -15,6 +15,7 @@ def test_settings_load_required_and_defaults(monkeypatch: pytest.MonkeyPatch) ->
     assert settings.discord_guild_id is None
     assert settings.openai_model == "gpt-5.6-terra"
     assert settings.reasoning_effort == "medium"
+    assert settings.agent_config_dir.as_posix() == "config/agents"
 
 
 def test_settings_require_secrets(monkeypatch: pytest.MonkeyPatch) -> None:
