@@ -5,7 +5,13 @@ import logging
 import discord
 from discord import app_commands
 
+from arch_bot import __version__
 from arch_bot.agent import ArchitectureAgent
+from arch_bot.attachments import (
+    attachment_context,
+    notice_text,
+    prepare_attachments,
+)
 from arch_bot.config import Settings
 from arch_bot.profiles import AgentProfile, AgentRegistry
 from arch_bot.text import split_message
@@ -67,21 +73,37 @@ class ArchBot(discord.Client):
         return self.agent_for_profile(profile), profile
 
     async def on_message(self, message: discord.Message) -> None:
-        if message.author.bot or not message.content.strip():
+        if message.author.bot or (not message.content.strip() and not message.attachments):
             return
         profile = self.profile_for_channel(message.channel.id)
         if profile is None:
             return
 
         agent = self.agent_for_profile(profile)
-        prompt = f"{message.author.display_name}: {message.content}"
         try:
             async with message.channel.typing():
+                prepared = await prepare_attachments(message.attachments, profile.attachments)
+                prompt_text = message.content.strip() or (
+                    "첨부파일을 검토하고 핵심 내용, 확인 가능한 사항과 추가로 필요한 "
+                    "정보를 설명해 주세요."
+                )
+                prompt = (
+                    f"{message.author.display_name}: {prompt_text}"
+                    f"{attachment_context(prepared)}"
+                )
+                if message.attachments and not prepared.content_items:
+                    await message.channel.send(
+                        notice_text(prepared),
+                        allowed_mentions=discord.AllowedMentions.none(),
+                    )
+                    return
                 answer = await agent.ask(
                     f"{message.guild.id if message.guild else 'dm'}:{message.channel.id}",
                     prompt,
+                    content_items=prepared.content_items,
                 )
-            for chunk in split_message(answer):
+            response_text = "\n\n".join(filter(None, (notice_text(prepared), answer)))
+            for chunk in split_message(response_text):
                 await message.channel.send(
                     chunk,
                     allowed_mentions=discord.AllowedMentions.none(),
@@ -130,6 +152,7 @@ def create_bot(settings: Settings) -> ArchBot:
         )
         await interaction.response.send_message(
             f"정상 작동 중입니다.\n"
+            f"버전: `v{__version__}`\n"
             f"에이전트: `{agent.display_name}` (`{agent.agent_id}`)\n"
             f"모델: `{agent.model}`\n"
             f"선언된 기능: `{capabilities}`",

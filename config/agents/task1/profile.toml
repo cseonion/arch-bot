@@ -5,5 +5,19 @@ system_prompt_file = "system.md"
 
 [capabilities]
 skills = ["architecture-safety"]
-tools = []
+tools = ["task1-attachment-reader"]
 mcp_servers = []
+
+[attachments]
+enabled = true
+max_files = 5
+max_file_size_mb = 15
+max_total_size_mb = 30
+image_detail = "high"
+pdf_detail = "high"
+allowed_extensions = [
+  "png", "jpg", "jpeg", "webp",
+  "pdf", "doc", "docx", "rtf", "odt", "txt", "md",
+  "ppt", "pptx", "csv", "xls", "xlsx",
+  "dxf", "ifc", "dwg", "dgn", "rvt",
+]

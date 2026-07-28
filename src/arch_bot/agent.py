@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from collections import defaultdict
+from collections.abc import Sequence
 
 from openai import AsyncOpenAI
 
@@ -39,12 +40,29 @@ class ArchitectureAgent:
         self._previous_response_ids: dict[str, str] = {}
         self._locks: defaultdict[str, asyncio.Lock] = defaultdict(asyncio.Lock)
 
-    async def ask(self, conversation_id: str, prompt: str) -> str:
+    async def ask(
+        self,
+        conversation_id: str,
+        prompt: str,
+        *,
+        content_items: Sequence[dict[str, object]] = (),
+    ) -> str:
         async with self._locks[conversation_id]:
+            request_input: object = prompt
+            if content_items:
+                request_input = [
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "input_text", "text": prompt},
+                            *content_items,
+                        ],
+                    }
+                ]
             request: dict[str, object] = {
                 "model": self._model,
                 "instructions": self._system_prompt,
-                "input": prompt,
+                "input": request_input,
                 "reasoning": {"effort": self._reasoning_effort},
                 "max_output_tokens": self._max_output_tokens,
             }

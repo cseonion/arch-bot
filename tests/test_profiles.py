@@ -79,3 +79,15 @@ def test_registry_rejects_duplicate_channels(
 
     with pytest.raises(ConfigError, match="Duplicate"):
         AgentRegistry.load(tmp_path / "agents")
+
+
+def test_repository_task1_attachment_policy(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("DISCORD_TASK1_CHANNEL_ID", raising=False)
+
+    registry = AgentRegistry.load(Path("config/agents"))
+    task1 = next(profile for profile in registry.profiles if profile.agent_id == "task1")
+
+    assert task1.attachments.enabled is True
+    assert "pdf" in task1.attachments.allowed_extensions
+    assert "dwg" in task1.attachments.allowed_extensions
+    assert task1.attachments.max_total_bytes < 50 * 1024 * 1024

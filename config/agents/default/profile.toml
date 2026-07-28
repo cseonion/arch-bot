@@ -7,3 +7,6 @@ system_prompt_file = "system.md"
 skills = ["architecture-safety"]
 tools = []
 mcp_servers = []
+
+[attachments]
+enabled = false
