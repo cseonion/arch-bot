@@ -1,145 +1,59 @@
-# arch-bot
+# 건축봇
 
-Discord에서 사용하는 건축 업무용 LLM 비서의 초기 실행 환경입니다.
+## 1. 개요 및 소개
 
-현재 제공하는 기능:
+건축봇은 Discord 채널마다 역할이 분리된 건축 업무용 AI 비서입니다. 일반
+채널에서는 `/ask` 명령으로 질문하고, 전용 Task 채널에서는 명령어 없이 평소처럼
+메시지와 파일을 올려 대화할 수 있습니다.
 
-- `/ask <질문>`: 현재 채널의 대화 맥락을 이어서 답변
-- 지정된 Task 채널: 명령어 없이 일반 메시지로 독립 에이전트와 대화
-- `/reset`: 현재 채널의 대화 맥락 초기화
-- `/status`: 연결 상태, 사용 모델과 현재 에이전트 확인
-- Discord 길이 제한을 고려한 긴 답변 자동 분할
-- 에이전트별 시스템 프롬프트와 Skill/Tool/MCP 할당 구조
-- 환경변수 기반 비밀키 및 모델 설정
+현재는 로컬 컴퓨터에서 봇 실행 창이 켜져 있는 동안 작동합니다. macOS에서는
+`run-macos.command`, Windows에서는 `run-windows.bat`를 더블 클릭해 실행합니다.
 
-## 1. Discord 앱 만들기
+자주 쓰는 명령:
 
-1. [Discord Developer Portal](https://discord.com/developers/applications)에서
-   **New Application**을 선택합니다.
-2. **Bot** 메뉴에서 봇 토큰을 생성합니다. 토큰은 외부에 공유하거나 Git에
-   커밋하지 않습니다.
-3. **Installation**에서 서버 설치를 활성화하고 `bot`,
-   `applications.commands` scope를 선택합니다.
-4. 봇 권한은 최소한 `View Channels`, `Send Messages`를 부여합니다.
-5. 생성된 설치 링크로 테스트 서버에 앱을 추가합니다.
-6. **Bot** 메뉴의 **Privileged Gateway Intents**에서
-   **Message Content Intent**를 활성화합니다.
+- `/ask`: 현재 채널에서 건축봇에게 질문
+- `/reset`: 현재 채널 에이전트의 대화 맥락 초기화
+- `/status`: 현재 에이전트, 모델과 활성 기능 확인
 
-`/ask`만 사용할 때는 Message Content Intent가 필요하지 않지만, 지정 채널의
-일반 메시지를 수신하려면 반드시 필요합니다.
+건축봇의 답변은 업무 보조자료입니다. 법규, 구조, 피난, 안전, 계약처럼 중요한
+판단은 최신 프로젝트 문서와 관할 기준을 바탕으로 자격을 갖춘 전문가가 최종
+검토해야 합니다.
 
-## 2. 환경변수 설정
+## 2. 채널별 역할 및 기능 소개
 
-```bash
-cp .env.example .env
-```
+| 채널 | 대화 방식 | 현재 역할 | 입력 |
+|---|---|---|---|
+| 일반 채널 | `/ask` 명령 | 범용 건축 질의응답 | 텍스트 |
+| `건축봇-task1` | 일반 메시지 | 도면·문서 접수와 기초 분석 테스트 | 텍스트, 지원 첨부파일 |
+| `건축봇-task2` | 일반 메시지 | 향후 별도 업무를 배정할 독립 에이전트 | 현재 텍스트 |
 
-`.env`에 `DISCORD_TOKEN`과 `OPENAI_API_KEY`를 입력합니다. 개발 중에는 Discord
-서버 ID를 `DISCORD_GUILD_ID`에 입력하면 슬래시 명령이 해당 서버에 바로
-동기화됩니다. 서버 ID는 Discord의 개발자 모드를 켠 뒤 서버를 우클릭하여 복사할
-수 있습니다.
+각 Task 채널은 서로 다른 시스템 프롬프트와 대화 맥락을 사용합니다. 따라서
+`task1`의 대화 내용이 `task2`의 대화로 이어지지 않습니다.
 
-Discord 개발자 모드를 켠 뒤 각 채널을 우클릭하여 **채널 ID 복사**를 선택하고
-다음 값을 설정합니다.
+### Task1 첨부파일 지원 범위
 
-```dotenv
-DISCORD_TASK1_CHANNEL_ID=건축봇-task1의_채널_ID
-DISCORD_TASK2_CHANNEL_ID=건축봇-task2의_채널_ID
-```
+| 형식 | 현재 처리 방식 |
+|---|---|
+| PNG, JPG/JPEG, WEBP | 이미지의 시각 정보를 모델이 분석 |
+| PDF | 텍스트와 페이지 이미지를 함께 분석 |
+| DOC, DOCX, RTF, ODT, TXT, Markdown | 문서 텍스트를 추출해 분석 |
+| PPT, PPTX | 슬라이드 텍스트를 추출해 분석 |
+| CSV, XLS, XLSX | 표 구조를 기반으로 기초 분석 |
+| ASCII DXF | 버전과 주요 엔티티 수를 로컬에서 요약 |
+| IFC | 스키마와 주요 엔티티 수를 로컬에서 요약 |
+| DWG, DGN, RVT | 파일을 인식하지만 아직 원본 해석은 하지 않으며 변환 방법 안내 |
 
-채널 이름이 아니라 숫자로 된 채널 ID를 사용합니다. 지정하지 않은 Task 채널은
-자동 대화 대상에서 제외되지만 `/ask`는 계속 사용할 수 있습니다.
+PDF가 아닌 Word·PowerPoint 문서의 내부 이미지와 차트는 현재 모델 입력에서
+누락될 수 있습니다. 도표와 배치가 중요하면 PDF로 내보내 함께 올리는 것을
+권장합니다. DXF와 IFC 역시 현재는 형상 렌더링이나 간섭·수량 검증이 아니라
+구조적 메타데이터 요약 단계입니다.
 
-기본 모델은 비용과 성능의 균형을 위한 `gpt-5.6-terra`입니다. `.env`의
-`OPENAI_MODEL`을 바꾸면 코드 수정 없이 다른 모델을 사용할 수 있습니다.
+지원되지 않거나 손상된 파일은 읽은 것처럼 답하지 않고, 건너뛴 이유와 권장
+변환 형식을 안내합니다.
 
-## 3. 로컬 실행
+첨부파일은 분석 과정에서 실행 중인 봇과 OpenAI API로 전송됩니다. 기밀 또는
+개인정보가 포함된 프로젝트 자료는 조직의 데이터 정책을 확인한 뒤 사용하세요.
 
-Python 3.11 이상이 필요합니다.
-
-가장 간단한 방법은 운영체제에 맞는 파일을 더블 클릭하는 것입니다.
-
-- macOS: `run-macos.command`
-- Windows: `run-windows.bat`
-
-첫 실행 시 가상환경과 패키지를 준비합니다. `.env`가 없으면 예제 파일을 복사해
-편집기로 열고 종료하며, 설정을 마친 뒤 다시 더블 클릭하면 봇 서버가 실행됩니다.
-열린 터미널 창을 닫거나 `Ctrl+C`를 누르면 봇도 종료됩니다.
-
-터미널에서 직접 실행하려면 다음 명령을 사용합니다.
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install ".[dev]"
-arch-bot
-```
-
-일반 설치 방식을 사용하므로 소스 코드를 변경한 뒤에는
-`python -m pip install ".[dev]"`를 다시 실행합니다. macOS의 Python 3.14에서는
-editable 설치(`-e`)의 경로 파일이 숨김 처리되어 패키지를 찾지 못하는 경우가
-있어 권장하지 않습니다.
-
-또는 Docker를 사용합니다.
-
-```bash
-docker compose up --build
-```
-
-로그에 `Connected as ...; 2 autonomous channels configured`가 표시되면
-Discord에서 `/status`, `/ask`를 확인하고 지정한 Task 채널에 일반 메시지를
-입력합니다.
-
-## 4. 에이전트 구성
-
-각 에이전트는 `config/agents/<agent-id>/`에 독립적으로 구성합니다.
-
-```text
-config/
-├── agents/
-│   ├── default/  # 일반 채널의 /ask
-│   ├── task1/    # 건축봇-task1
-│   └── task2/    # 건축봇-task2
-├── skills/       # 재사용 가능한 프롬프트 지침
-├── tools/        # 향후 로컬 Tool 어댑터
-└── mcp/          # 향후 MCP 연결 어댑터
-```
-
-각 `profile.toml`에서 채널 환경변수, 시스템 프롬프트 파일과 할당 기능을
-선언합니다.
-
-```toml
-id = "task1"
-display_name = "건축봇 Task 1"
-channel_id_env = "DISCORD_TASK1_CHANNEL_ID"
-system_prompt_file = "system.md"
-
-[capabilities]
-skills = ["architecture-safety"]
-tools = []
-mcp_servers = []
-```
-
-시스템 프롬프트는 같은 폴더의 `system.md`를 수정합니다. `skills`에 등록한
-`config/skills/<name>.md`는 해당 에이전트의 시스템 프롬프트에 자동으로
-결합됩니다.
-
-현재 `skills`는 실제 적용되는 프롬프트 모듈입니다. `tools`와 `mcp_servers`는
-에이전트별 할당을 위한 선언부이며, 실제 실행은 각 Tool/MCP 어댑터가 추가된
-이후 활성화됩니다. 연결되지 않은 기능을 실행된 것처럼 처리하지 않습니다.
-
-## 5. 검증
-
-```bash
-ruff check .
-pytest
-```
-
-## 현재 범위와 다음 단계
-
-대화 맥락은 에이전트와 채널별로 분리되지만 프로세스 메모리에만 저장되므로
-재시작하면 초기화됩니다. 건축 문서 저장소 연결, 권한 체계, 감사 로그, 영속 대화
-기록, Tool/MCP 실행 및 승인 흐름은 이후 단계에서 추가합니다.
-
-OpenAI 연동은 Responses API를 사용합니다. 일반 메시지는 `.env`에 지정한 Task
-채널에서만 처리하며 다른 텍스트 채널의 내용에는 반응하지 않습니다.
+설치, 환경 설정, 저장소 구조와 개발 방법은
+[README_dev.md](README_dev.md)를 참고하세요. 버전별 변경 내용은
+[CHANGELOG.md](CHANGELOG.md)에 기록합니다.
