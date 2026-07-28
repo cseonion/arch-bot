@@ -31,5 +31,7 @@
   사용자/개발자 문서 분리와 `for_codex` 장기 규칙을 추가했습니다.
 - SemVer 태그에서 한국어 두 단 변경 기록을 검증해 GitHub Release를 만드는
   workflow를 추가했습니다.
+- GitHub Actions에서도 저장소 루트의 릴리스 스크립트 테스트를 찾을 수 있도록
+  pytest 실행 경로를 `python -m pytest`로 통일했습니다.
 - 첨부파일 구조화 API 입력, 파일 전용 메시지, 실패 시 모델 호출 차단, 파일
   서명, CAD 요약과 프로필 정책 테스트를 추가했습니다.
